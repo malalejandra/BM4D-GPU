@@ -18,10 +18,9 @@ namespace bg = bm4d_gpu;
 int main(int argc, char* argv[]) {
   // Parse parameters
   bg::Parameters parameters;
-  if (!parameters.parse(argc, argv)) {
-    std::cerr << "Unable to parse input arguments!" << std::endl;
-    parameters.printHelp();
-    exit(EXIT_FAILURE);
+  int ret_val;
+  if (!parameters.parse(argc, argv, &ret_val)) {
+    exit(ret_val);
   }
 
   parameters.printParameters();
@@ -51,6 +50,9 @@ int main(int argc, char* argv[]) {
   std::cout << "PSNR noisy: " << bg::psnr(gt, noisy_image) << std::endl;
   std::cout << "PSNR denoised: " << bg::psnr(gt, denoised_image) << std::endl;
   std::cout << "PSNR reconstructed: " << bg::psnr(noisy_image, denoised_image) << std::endl;
+  if (parameters.output_filename.size() > 0) {
+    std::cout << "TODO: Write to \"" << parameters.output_filename << "\"" << std::endl;
+  }
 
   return EXIT_SUCCESS;
 }

@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <opencv2/core.hpp>
 
 namespace bm4d_gpu {
 
@@ -21,47 +22,61 @@ struct Parameters {
   int step_size{3};    // Reasonable values {1,2,3,4}
                        // Significantly (exponentially) affects speed,
                        // slightly affect results
-  int gpu_device = -1;
+  int gpu_device{0};
 
   // Fixed in current implementation
   // TODO: check what's up here
   const int patch_size{4};  // Patch size
   const int maxN{16};       // Maximal number of the patches in one group
 
-  bool parse(const int argc, const char* const* const argv) {
-    // TODO: use boost?
-    if (argc == 1) {
+  bool parse(const int argc, const char* const* const argv, int* ret_val) {
+    const cv::String keys =
+      "{help h usage ?           |        | Print help message}"
+      "{@input                   | <none> | Input file path (tiff/avi)}"
+      "{@output                  |        | Output file path}"
+      "{similarity-threshold     | 2500.  | Similarity threshold }"
+      "{hard-shrinkage-threshold | 2.7    | Similarity threshold }"
+      "{window-size              | 5      | Window size }"
+      "{step-size                | 3      | Step size }"
+      "{gpu-index                | 0      | GPU index }"
+    ;
+    cv::CommandLineParser parser(argc, argv, keys);
+
+    if (parser.has("help")) {
+      parser.printMessage();
+      *ret_val = EXIT_SUCCESS;
       return false;
     }
 
-    if (argc >= 2) input_filename = argv[1];
-    if (argc >= 3) output_filename = argv[2];
-    if (argc >= 4) sim_th = std::atof(argv[3]);
-    if (argc >= 5) hard_th = std::atof(argv[4]);
+    if (!parser.check()) {
+      parser.printErrors();
+      *ret_val = EXIT_FAILURE;
+      return false;
+    }
 
-    if (argc >= 6) window_size = std::atoi(argv[5]);
-    if (argc >= 7) step_size = std::atoi(argv[6]);
-
-    if (argc >= 8) gpu_device = std::atoi(argv[7]);
+    input_filename = parser.get<cv::String>("@input");
+    output_filename = parser.get<cv::String>("@output");
+    sim_th = parser.get<float>("similarity-threshold");
+    hard_th = parser.get<float>("hard-shrinkage-threshold");
+    window_size = parser.get<int>("window-size");
+    step_size = parser.get<int>("step-size");
+    gpu_device = parser.get<int>("gpu-index");
 
     return true;
-  }
-
-  void printHelp() const {
-    std::cout << "bm4d-gpu input_file[tiff,avi] [sim_th] [hard_th]" << std::endl;
   }
 
   void printParameters() const {
     std::cout << "Parameters:" << std::endl;
     std::cout << "            input file: " << input_filename << std::endl;
-    std::cout << " similarity threshold: " << std::fixed << std::setprecision(3) << sim_th
+    std::cout << "           output file: " << output_filename << std::endl;
+    std::cout << "  similarity threshold: " << std::fixed << std::setprecision(3) << sim_th
               << std::endl;
-    std::cout << "       hard threshold: " << std::fixed << std::setprecision(3) << hard_th
+    std::cout << "        hard threshold: " << std::fixed << std::setprecision(3) << hard_th
               << std::endl;
-    std::cout << "          window size: " << window_size << std::endl;
-    std::cout << "            step size: " << step_size << std::endl;
-    std::cout << " max cubes in a group: " << maxN << std::endl;
-    std::cout << "           patch size: " << patch_size << std::endl;
+    std::cout << "           window size: " << window_size << std::endl;
+    std::cout << "             step size: " << step_size << std::endl;
+    std::cout << "  max cubes in a group: " << maxN << std::endl;
+    std::cout << "            patch size: " << patch_size << std::endl;
   }
 };
 }  // namespace bm4d_gpu
