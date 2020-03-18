@@ -51,7 +51,8 @@ int main(int argc, char* argv[]) {
   std::cout << "PSNR denoised: " << bg::psnr(gt, denoised_image) << std::endl;
   std::cout << "PSNR reconstructed: " << bg::psnr(noisy_image, denoised_image) << std::endl;
   if (parameters.output_filename.size() > 0) {
-    std::cout << "TODO: Write to \"" << parameters.output_filename << "\"" << std::endl;
+    std::cout << "Writing denoised video to \"" << parameters.output_filename << "\"" << std::endl;
+    reader.saveVideo(parameters.output_filename, denoised_image, width, height, depth);
   }
 
   return EXIT_SUCCESS;

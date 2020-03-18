@@ -3,6 +3,7 @@
  * v.d.tananaev [at] gmail [dot] com
  */
 #include <bm4d-gpu/allreader.h>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #ifndef idx3
 #define idx3(x, y, z, x_size, y_size) ((x) + ((y) + (y_size) * (z)) * (x_size))
@@ -88,16 +89,16 @@ void AllReader::readVideo(const std::string& filename, std::vector<unsigned char
 
   volume.resize(width * height * depth);
 
-  cv::Mat frame;
+  cv::Mat frame, gray;
 
   if (!capture.isOpened()) throw "Error when reading file";
 
   for (int slice = 0;; slice++) {
     if (!capture.read(frame)) break;
-
+    cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
     for (int y = 0; y < height; ++y)
       for (int x = 0; x < width; ++x)
-        volume[idx3(x, y, slice, width, height)] = frame.at<unsigned char>(y, x);
+        volume[idx3(x, y, slice, width, height)] = gray.at<unsigned char>(y, x);
 
     if (this->display) {
       cv::imshow("window", frame);
@@ -122,3 +123,21 @@ void AllReader::read(const std::string& filename, std::vector<unsigned char>& vo
     exit(EXIT_FAILURE);
   }
 }
+
+void AllReader::saveVideo(const std::string& filename, const std::vector<unsigned char>& volume, int width, int height, int depth) {
+  cv::Mat frame(height, width, CV_8UC3) ;
+  cv::Mat gray(height, width, CV_8UC1) ;
+
+  cv::VideoWriter writer(filename, CV_FOURCC('M', 'J', 'P', 'G'), 30, cv::Size(width,height), true);
+  for (int slice = 0; slice < depth; slice++) {
+    for (int y = 0; y < height; ++y) {
+      for (int x = 0; x < width; ++x) {
+        gray.at<unsigned char>(y, x) = volume[idx3(x, y, slice, width, height)];
+      }
+    }
+    cv::cvtColor(gray, frame, cv::COLOR_GRAY2BGR);
+    writer.write(frame);
+  }
+  writer.release();
+}
+
